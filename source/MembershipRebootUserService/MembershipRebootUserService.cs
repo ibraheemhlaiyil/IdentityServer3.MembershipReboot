@@ -187,21 +187,14 @@ namespace Thinktecture.IdentityServer.MembershipReboot
 
         protected virtual async Task<AuthenticateResult> ProcessNewExternalAccountAsync(string tenant, string provider, string providerId, IEnumerable<Claim> claims)
         {
-            var user = await TryGetExistingUserFromExternalProviderClaimsAsync(provider, claims);
-            if (user == null)
-            {
-                user = await InstantiateNewAccountFromExternalProviderAsync(provider, providerId, claims);
-
-                var email = claims.GetValue(Constants.ClaimTypes.Email);
-
-                user = userAccountService.CreateAccount(
-                    tenant,
-                    Guid.NewGuid().ToString("N"),
-                    null, email,
-                    null, null,
-                    user);
-            }
-
+            var user = await InstantiateNewAccountFromExternalProviderAsync(provider, providerId, claims);
+            user = userAccountService.CreateAccount(
+                tenant,
+                Guid.NewGuid().ToString("N"), 
+                null, ClaimHelper.GetValue(claims, Constants.ClaimTypes.Email),
+                null, null, 
+                user);
+            
             userAccountService.AddOrUpdateLinkedAccount(user, provider, providerId);
 
             var result = await AccountCreatedFromExternalProviderAsync(user.ID, provider, providerId, claims);
